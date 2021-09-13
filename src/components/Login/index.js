@@ -1,21 +1,51 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity } from 'react-native';
+import { Text, TextInput, TouchableOpacity, SafeAreaView } from 'react-native';
+
+import firebase from '../../services/firebaseConnection';
 
 import styles from './styles';
 
 export default function Login() {
+    const [type, setType] = useState('Login');
     const [email, setEmail] = useState('');
-    const [senha, setSenha] = useState('');
+    const [password, setPassword] = useState('');
 
     const changeEmail = text => setEmail(text);
-    const changeSenha = text => setSenha(text);
+    const changePassword = text => setPassword(text);
 
-    function handleLogin(){
-
+    function handleLogin() {
+        if (type === 'Login') {
+            const user = firebase.auth().signInWithEmailAndPassword(email, password)
+                .then((user) => {
+                    console.log(user.user)
+                })
+                .catch((e) => {
+                    console.log(e);
+                    alert('Ops, algo deu errado!')
+                    return;
+                })
+        } else {
+            const user = firebase.auth().createUserWithEmailAndPassword(email, password)
+                .then((user) => {
+                    console.log(user.user)
+                })
+                .catch((e) => {
+                    console.log(e);
+                    alert('Ops, algo deu errado!')
+                    return;
+                })
+        }
     };
 
+    const changeButton = () => setType(type => type === 'Login' ? 'Cadastrar' : 'Login');
+
+    const showButton = type === 'Login' ? 'Acessar' : 'Cadastrar';
+    const showRegister = type === 'Login' ? 'Criar uma conta' : 'Já tenho uma conta';
+    const showColor = type === 'Login' ? '#3ea6f2' : '#141414';
+    const showPassword = type === 'Login' ? true : false;
+
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <TextInput
                 placeholder='Insira seu e-mail'
                 value={email}
@@ -25,22 +55,22 @@ export default function Login() {
 
             <TextInput
                 placeholder='******'
-                value={senha}
-                onChangeText={changeSenha}
+                value={password}
+                onChangeText={changePassword}
                 style={styles.input}
+                secureTextEntry={showPassword}
             />
 
             <TouchableOpacity
-                style={styles.handleLogin}
+                style={[styles.handleLogin, { backgroundColor: showColor }]}
                 onPress={handleLogin}
-
             >
-                <Text style={styles.handleLoginTexto}>Acessar</Text>
+                <Text style={styles.handleLoginText}>{showButton}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity>
-                <Text style={{ textAlign: 'center' }}>Criar uma conta</Text>
+            <TouchableOpacity onPress={changeButton}>
+                <Text style={{ textAlign: 'center' }}>{showRegister}</Text>
             </TouchableOpacity>
-        </View>
+        </SafeAreaView>
     );
 }

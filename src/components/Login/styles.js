@@ -17,13 +17,12 @@ const styles = StyleSheet.create({
     },
     handleLogin: {
         height: 40,
-        backgroundColor: '#141414',
         borderRadius: 5,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 15
     },
-    handleLoginTexto: {
+    handleLoginText: {
         color: '#FFF',
         fontSize: 18
     }
