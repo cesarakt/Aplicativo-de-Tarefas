@@ -5,8 +5,8 @@ import styles from './styles';
 import { Feather } from '@expo/vector-icons';
 
 export default function TaskList({ data, deleteItem, editItem }) {
-    const task = data.task;
-    const deleteTask = () => deleteItem(data.id);
+    const task = data.nome;
+    const deleteTask = () => deleteItem(data.key);
     const editTask = () => editItem(data);
 
     return (
@@ -14,7 +14,7 @@ export default function TaskList({ data, deleteItem, editItem }) {
             <TouchableOpacity style={{ marginRight: 10 }} onPress={deleteTask}>
                 <Feather name='trash' color='#F00' size={20} />
             </TouchableOpacity>
-
+            
             <View>
                 <TouchableWithoutFeedback onPress={editTask}>
                     <Text style={styles.tasks}>{task}</Text>

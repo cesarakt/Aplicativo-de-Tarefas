@@ -1,52 +1,84 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, SafeAreaView, TextInput, TouchableOpacity, View, FlatList } from 'react-native';
+import { StyleSheet, Text, SafeAreaView, TextInput, TouchableOpacity, View, FlatList, Keyboard } from 'react-native';
+
+import firebase from './src/services/firebaseConnection';
 
 import Login from './src/components/Login';
 import TaskList from './src/components/TaskList';
 
-let lista = [
-  { id: '1', task: 'Comprar arroz e feijão' },
-  { id: '2', task: 'Ir ao dentista' }
-]
-
 export default function App() {
   const [user, setUser] = useState(null);
-  const [task, setTask] = useState('');
+  const [tasks, setTasks] = useState([]);
+
+  const [newTask, setNewTask] = useState('');
 
   const changeStatus = user => setUser(user);
-  const changeTask = text => setTask(text);
+  const changeTask = text => setNewTask(text);
   const keyList = item => item.key;
 
-  function handleDelete(key){
+  function handleAdd() {
+    if (newTask === '') {
+      return;
+    }
+    let tarefas = firebase.database().ref('tarefas').child(user);
+    let chave = tarefas.push().key;
+
+    tarefas.child(chave).set({
+      nome: newTask
+    })
+      .then(() => {
+        const data = {
+          key: chave,
+          nome: newTask
+        };
+
+        setTasks(oldTasks => [...oldTasks, data]);
+
+      })
+      .catch((e) => {
+        alert('ops algo deu errado!');
+        console.log(e);
+      })
+
+    Keyboard.dismiss();
+    setNewTask('');
+
+  }
+
+  function handleDelete(key) {
     console.log(key);
   }
 
-  function handleEdit(data){
+  function handleEdit(data) {
     console.log(data);
   }
 
-  const render = ({ item }) => (<TaskList data={item} deleteItem={handleDelete} editItem={handleEdit} />)
+  const render = ({ item }) => (
+    <TaskList data={item} deleteItem={handleDelete} editItem={handleEdit} />
+  )
 
-  if (!user) { return <Login changeStatus={changeStatus} /> }
+  if (!user) {
+    return <Login changeStatus={changeStatus} />
+  }
 
   return (
     <SafeAreaView style={styles.container}>
 
       <View style={styles.insertTask}>
         <TextInput
-          value={task}
+          value={newTask}
           onChangeText={changeTask}
           style={styles.input}
           placeholder='O que vai fazer hoje ?'
         />
-        <TouchableOpacity style={styles.addButton}>
+        <TouchableOpacity style={styles.addButton} onPress={handleAdd}>
           <Text style={styles.buttonText}>+</Text>
         </TouchableOpacity>
       </View>
 
       <FlatList
         keyExtractor={keyList}
-        data={lista}
+        data={tasks}
         renderItem={render}
       />
     </SafeAreaView>
