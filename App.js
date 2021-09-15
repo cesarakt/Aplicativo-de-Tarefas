@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet,
   Text,
@@ -12,6 +12,7 @@ import {
 
 import firebase from './src/services/firebaseConnection';
 
+import { Feather } from '@expo/vector-icons';
 import Login from './src/components/Login';
 import TaskList from './src/components/TaskList';
 
@@ -19,6 +20,9 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState('');
+  const [key, setKey] = useState('');
+
+  const inputRef = useRef(null);
 
   const changeStatus = user => setUser(user);
   const changeTask = text => setNewTask(text);
@@ -51,9 +55,34 @@ export default function App() {
   }, [user]);
 
   function handleAdd() {
+
     if (newTask === '') {
       return;
     }
+
+    //Usuário quer editar uma tarefa
+    if (key !== '') {
+      firebase.database().ref('tarefas').child(user).child(key).update({
+        nome: newTask
+      })
+        .then(() => {
+          const taskIndex = tasks.findIndex(item => item.key === key)
+          const taskClone = tasks;
+          taskClone[taskIndex].nome = newTask
+
+          setTasks([...taskClone])
+        })
+        .catch((e) => {
+          alert('Ops, algo deu errado')
+          console.log(e)
+        })
+
+      Keyboard.dismiss();
+      setNewTask('');
+      setKey('');
+      return;
+    }
+
     let tarefas = firebase.database().ref('tarefas').child(user);
     let chave = tarefas.push().key;
 
@@ -92,7 +121,22 @@ export default function App() {
   }
 
   function handleEdit(data) {
-    console.log(data);
+    setKey(data.key);
+    setNewTask(data.nome);
+    inputRef.current.focus();
+
+  }
+
+  function cancelEdit(){
+    setKey('');
+    setNewTask('');
+    Keyboard.dismiss();
+  }
+
+  async function logOut() {
+    await firebase.auth().signOut();
+    setUser(null);
+    setNewTask('');
   }
 
   const render = ({ item }) => (
@@ -106,15 +150,31 @@ export default function App() {
   return (
     <SafeAreaView style={styles.container}>
 
+      {key.length > 0 &&
+        <View style={{ flexDirection: 'row', marginBottom: 8 }}>
+          <TouchableOpacity onPress={cancelEdit}>
+            <Feather name='x-circle' color='#F00' size={20} />
+          </TouchableOpacity>
+          <Text style={{ color: '#F00', marginLeft: 5 }}>
+            Você está editando uma tarefa!
+          </Text>
+        </View>
+      }
+
+
       <View style={styles.insertTask}>
         <TextInput
           value={newTask}
           onChangeText={changeTask}
           style={styles.input}
           placeholder='O que vai fazer hoje ?'
+          ref={inputRef}
         />
         <TouchableOpacity style={styles.addButton} onPress={handleAdd}>
           <Text style={styles.buttonText}>+</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.addButton} onPress={logOut}>
+          <Feather name='log-out' color='#FFF' size={15} />
         </TouchableOpacity>
       </View>
 
