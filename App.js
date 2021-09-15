@@ -1,5 +1,14 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, SafeAreaView, TextInput, TouchableOpacity, View, FlatList, Keyboard } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  StyleSheet,
+  Text,
+  SafeAreaView,
+  TextInput,
+  TouchableOpacity,
+  View,
+  FlatList,
+  Keyboard
+} from 'react-native';
 
 import firebase from './src/services/firebaseConnection';
 
@@ -9,12 +18,37 @@ import TaskList from './src/components/TaskList';
 export default function App() {
   const [user, setUser] = useState(null);
   const [tasks, setTasks] = useState([]);
-
   const [newTask, setNewTask] = useState('');
 
   const changeStatus = user => setUser(user);
   const changeTask = text => setNewTask(text);
   const keyList = item => item.key;
+
+  useEffect(() => {
+
+    function getUser() {
+      if (!user) {
+        return;
+      }
+
+      firebase.database().ref('tarefas').child(user).once('value', (snapshot) => {
+        setTasks([]);
+
+        snapshot?.forEach((childItem) => {
+          let data = {
+            key: childItem.key,
+            nome: childItem.val().nome
+          }
+          setTasks(oldTasks => [...oldTasks, data]);
+        });
+
+      });
+
+    }
+
+    getUser();
+
+  }, [user]);
 
   function handleAdd() {
     if (newTask === '') {
@@ -46,7 +80,15 @@ export default function App() {
   }
 
   function handleDelete(key) {
-    console.log(key);
+    firebase.database().ref('tarefas').child(user).child(key).remove()
+      .then(() => {
+        const findTask = tasks.filter(item => item.key !== key);
+        setTasks(findTask);
+      })
+      .catch((e) => {
+        alert('Ops, algo deu errado!')
+        console.log(e)
+      })
   }
 
   function handleEdit(data) {
